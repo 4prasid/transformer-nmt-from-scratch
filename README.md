@@ -2,7 +2,7 @@
 
 **Student:** Prasid | **Roll No:** PH21B007
 
-🔗 [W&B Report](https://wandb.ai/prasid-indian-institute-of-technology-madras/da6401_assignment3/reports/DA6401-Assignment-3-PH21B007-PRASID--VmlldzoxNjkzMDIyMw) &nbsp;|&nbsp; 
+🔗 [W&B Report](https://api.wandb.ai/links/prasid-indian-institute-of-technology-madras/pae80rij) &nbsp;
 
 ---
 
