@@ -1,4 +1,4 @@
-# Transformer for German→English Neural Machine Translation
+# Transformer for German to English Neural Machine Translation
 
 A from-scratch PyTorch implementation of the Transformer from *"Attention Is All You Need"* (Vaswani et al., 2017), trained for German→English translation on Multi30k. Multi-head attention, positional encoding, the Noam learning-rate schedule, label smoothing and greedy decoding are all written by hand, with no `nn.MultiheadAttention`. Five controlled experiments probe why each design choice matters.
 
