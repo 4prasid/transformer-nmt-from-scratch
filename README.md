@@ -18,7 +18,7 @@ A from-scratch PyTorch implementation of the Transformer from *"Attention Is All
 │   ├── Head_specialization_3.py     # Per-head attention heatmaps, entropy and similarity analysis
 │   ├── Encodings_4.py               # Sinusoidal vs learned positional embeddings
 │   └── Decoder_sensitivity_5.py     # Label smoothing and prediction-confidence tracking
-├── FINDINGS.md                      # Written analysis of all five experiments
+├── Findings.md                      # Written analysis of all five experiments
 ├── requirements.txt
 └── LICENSE
 ```
@@ -121,9 +121,9 @@ print(model.infer("Ein Mann sitzt auf einer Bank."))
 - **No data leakage.** Vocabularies are built from the training split only and reused for validation and test.
 - **Embedding scaling.** Token embeddings are multiplied by √d_model before positional encodings are added.
 
-## Experiments & findings
+## Experiments & Findings
 
-Ablations use a smaller model (d_model 256, 3 layers, d_ff 512, dropout 0.1, 30 epochs, seed 42) so that paired runs finish quickly. The full analysis, including caveats, is in [FINDINGS.md](FINDINGS.md).
+Ablations use a smaller model (d_model 256, 3 layers, d_ff 512, dropout 0.1, 30 epochs, seed 42) so that paired runs finish quickly. The full analysis, including caveats, is in [Findings.md](Findings.md).
 
 | Topic | Key Finding |
 |---|---|
