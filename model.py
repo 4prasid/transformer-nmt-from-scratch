@@ -1,8 +1,5 @@
 """
 model.py — Transformer Architecture Skeleton
-DA6401 Assignment 3: "Attention Is All You Need"
-
-AUTOGRADER CONTRACT (DO NOT MODIFY SIGNATURES):
   ┌─────────────────────────────────────────────────────────────────┐
   │  scaled_dot_product_attention(Q, K, V, mask) → (out, weights)  │
   │  MultiHeadAttention.forward(q, k, v, mask)   → Tensor          │
@@ -27,8 +24,6 @@ import torch.nn.functional as F
 
 # ══════════════════════════════════════════════════════════════════════
 #   STANDALONE ATTENTION FUNCTION  
-#    Exposed at module level so the autograder can import and test it
-#    independently of MultiHeadAttention.
 # ══════════════════════════════════════════════════════════════════════
 
 def scaled_dot_product_attention(
@@ -755,9 +750,6 @@ class Transformer(nn.Module):
             except Exception as e:
                 print(f"Warning: Could not load weights: {e}")
 
-
-
-    # ── AUTOGRADER HOOKS ── keep these signatures exactly ─────────────
 
     def encode(
         self,
