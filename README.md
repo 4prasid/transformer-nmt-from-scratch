@@ -2,28 +2,7 @@
 
 A from-scratch PyTorch implementation of the Transformer from *"Attention Is All You Need"* (Vaswani et al., 2017), trained for German→English translation on Multi30k. Multi-head attention, positional encoding, the Noam learning-rate schedule, label smoothing and greedy decoding are all written by hand, with no `nn.MultiheadAttention`. Five controlled experiments probe why each design choice matters.
 
-**📊 [Interactive W&B report](https://api.wandb.ai/links/prasid-indian-institute-of-technology-madras/pae80rij)  ·  📝 [Full written analysis (FINDINGS.md)](FINDINGS.md)**
-
-## Key results
-
-| | |
-|---|---|
-| **Test BLEU** (Multi30k test set, 1,000 pairs, greedy decoding, corpus-level sacreBLEU) | **32.76** |
-| Final model | d_model 512 · 6 enc/dec layers · 8 heads · d_ff 2048 · dropout 0.3 · 50 epochs |
-| Training data | 29,000 sentence pairs (validation: 1,014 · test: 1,000) |
-| Optimization | Adam (β₁=0.9, β₂=0.98, ε=1e-9) · Noam schedule (4,000 warmup steps) · label smoothing 0.1 · gradient clipping at 1.0 |
-
-## What the experiments found
-
-Ablations use a smaller model (d_model 256, 3 layers, d_ff 512, dropout 0.1, 30 epochs, seed 42) so that paired runs finish quickly. The full analysis, including caveats, is in [FINDINGS.md](FINDINGS.md).
-
-| Topic | Question | Headline result |
-|---|---|---|
-| [Learning-rate warmup](FINDINGS.md#learning-rate-warmup-noam-schedule-vs-fixed-lr) | Noam schedule vs fixed lr = 1e-4 | Noam reaches **28.8 BLEU** vs **25.5** and a lower training loss (2.05 vs 2.92); validation loss ends equal |
-| [Attention scaling](FINDINGS.md#attention-scaling-factor) | With vs without the 1/√d_k factor | Unscaled Q/K gradients are larger and much noisier; no vanishing gradients at d_k = 32 |
-| [Head specialization](FINDINGS.md#head-specialization-in-the-last-encoder-layer) | What do the 8 heads of the last encoder layer learn? | Several heads show distinct syntactic roles; pairwise similarity is low (0.16–0.44), so little redundancy |
-| [Positional encodings](FINDINGS.md#positional-encodings-sinusoidal-vs-learned) | Sinusoidal vs learned embeddings | Indistinguishable in-distribution (28.80 vs 28.77 BLEU); they differ in extrapolation |
-| [Label smoothing](FINDINGS.md#label-smoothing-and-prediction-confidence) | ε = 0.1 vs ε = 0.0 | Smoothing lowers mean gold-token probability (0.53 vs 0.58) with slightly higher BLEU (28.6 vs 27.8) |
+**📊 [Interactive W&B report](https://api.wandb.ai/links/prasid-indian-institute-of-technology-madras/pae80rij)**
 
 ## Repository structure
 
@@ -43,6 +22,16 @@ Ablations use a smaller model (d_model 256, 3 layers, d_ff 512, dropout 0.1, 30 
 ├── requirements.txt
 └── LICENSE
 ```
+
+## Key results
+
+| | |
+|---|---|
+| **Test BLEU** (Multi30k test set, 1,000 pairs, greedy decoding, corpus-level sacreBLEU) | **32.76** |
+| Final model | d_model 512 · 6 enc/dec layers · 8 heads · d_ff 2048 · dropout 0.3 · 50 epochs |
+| Training data | 29,000 sentence pairs (validation: 1,014 · test: 1,000) |
+| Optimization | Adam (β₁=0.9, β₂=0.98, ε=1e-9) · Noam schedule (4,000 warmup steps) · label smoothing 0.1 · gradient clipping at 1.0 |
+
 
 ## Implementation details
 
@@ -114,6 +103,36 @@ Log in to W&B first (`wandb login`). Hyperparameters live in the `config` dict i
 
 The best checkpoint (by validation BLEU) is saved to `checkpoint_best.pth`, and a per-epoch checkpoint is written for recovery.
 
+## Inference
+
+```python
+from model import Transformer
+
+model = Transformer()   # builds vocabularies; tries to download the trained checkpoint (see note)
+print(model.infer("Ein Mann sitzt auf einer Bank."))
+# → "A man is sitting on a bench."
+```
+
+> **Note:** `Transformer()` tries to download the trained 512/6 checkpoint from Google Drive via `gdown` on construction. If the download fails, the model initializes with random weights and prints a warning, so train your own with `python train.py` in that case.
+
+## Design 
+
+- **Post-LayerNorm.** The residual connection is applied first, then LayerNorm, matching the original paper. Pre-LayerNorm is often easier to train, but Post-LN combined with the Noam warmup converges well on Multi30k and keeps the implementation faithful to the paper.
+- **No data leakage.** Vocabularies are built from the training split only and reused for validation and test.
+- **Embedding scaling.** Token embeddings are multiplied by √d_model before positional encodings are added.
+
+## Experiments & findings
+
+Ablations use a smaller model (d_model 256, 3 layers, d_ff 512, dropout 0.1, 30 epochs, seed 42) so that paired runs finish quickly. The full analysis, including caveats, is in [FINDINGS.md](FINDINGS.md).
+
+| Topic | Key Finding |
+|---|---|
+| Learning-rate warmup | Noam reaches **28.8 BLEU** vs **25.5** and a lower training loss (2.05 vs 2.92); validation loss ends equal |
+| Attention scaling | Unscaled Q/K gradients are larger and much noisier; no vanishing gradients at d_k = 32 |
+| Head specialization | Several heads show distinct syntactic roles; pairwise similarity is low (0.16–0.44), so little redundancy |
+| Positional encodings | Indistinguishable in-distribution (28.80 vs 28.77 BLEU); they differ in extrapolation |
+| Label smoothing | Smoothing lowers mean gold-token probability (0.53 vs 0.58) with slightly higher BLEU (28.6 vs 27.8) |
+
 ## Reproducing the experiments
 
 The experiment scripts import from the repository root, so run them from there with `PYTHONPATH=.`:
@@ -128,32 +147,13 @@ PYTHONPATH=. python Experiments/Decoder_sensitivity_5.py   # label smoothing ε 
 
 Run `Noam_scheduler_1.py` first, because the head-specialization script analyzes its checkpoint. All ablation runs share: d_model 256, 3 layers, 8 heads, d_ff 512, dropout 0.1, batch size 128, 4,000 warmup steps, seed 42, and 30 epochs (1,000 steps for the scaling ablation).
 
-## Inference
-
-```python
-from model import Transformer
-
-model = Transformer()   # builds vocabularies; tries to download the trained checkpoint (see note)
-print(model.infer("Ein Mann sitzt auf einer Bank."))
-# → "A man is sitting on a bench."
-```
-
-> **Note:** `Transformer()` tries to download the trained 512/6 checkpoint from Google Drive via `gdown` on construction. If the download fails, the model initializes with random weights and prints a warning, so train your own with `python train.py` in that case.
-
-## Design notes
-
-- **Post-LayerNorm.** The residual connection is applied first, then LayerNorm, matching the original paper. Pre-LayerNorm is often easier to train, but Post-LN combined with the Noam warmup converges well on Multi30k and keeps the implementation faithful to the paper.
-- **No data leakage.** Vocabularies are built from the training split only and reused for validation and test.
-- **Embedding scaling.** Token embeddings are multiplied by √d_model before positional encodings are added.
-
-## Related projects
-
-- [MLP-from-scratch](https://github.com/4prasid/MLP-from-scratch): a multilayer perceptron implemented from scratch in NumPy.
-- [multitask-vision-vgg11](https://github.com/4prasid/multitask-vision-vgg11): multi-task vision model built on VGG11.
 
 ## Background
 
-This project began as Assignment 3 of *DA6401: Introduction to Deep Learning* at IIT Madras. The assignment specified the architecture and the five experiments, and the implementation, training and analysis are my own work.
+Built using concepts taught in the course *DA6401: Introduction to Deep Learning* (IIT Madras).
+
+Part of a deep learning project series:
+[MLP from Scratch](https://github.com/4prasid/MLP-from-scratch) · [Multi-task Vision](https://github.com/4prasid/multitask-vision-vgg11) · [Transformer NMT](https://github.com/4prasid/transformer-nmt-from-scratch)
 
 ## References
 
