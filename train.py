@@ -1,18 +1,6 @@
 """
 train.py — Training Pipeline, Inference & Evaluation
-DA6401 Assignment 3: "Attention Is All You Need"
 
-AUTOGRADER CONTRACT (DO NOT MODIFY SIGNATURES):
-  ┌─────────────────────────────────────────────────────────────────────┐
-  │  greedy_decode(model, src, src_mask, max_len, start_symbol)         │
-  │      → torch.Tensor  shape [1, out_len]  (token indices)            │
-  │                                                                     │
-  │  evaluate_bleu(model, test_dataloader, tgt_vocab, device)           │
-  │      → float  (corpus-level BLEU score, 0–100)                      │
-  │                                                                     │
-  │  save_checkpoint(model, optimizer, scheduler, epoch, path) → None   │
-  │  load_checkpoint(path, model, optimizer, scheduler)        → int    │
-  └─────────────────────────────────────────────────────────────────────┘
 """
 
 
@@ -265,14 +253,13 @@ def evaluate_bleu(
 ) -> float:
     """
     Evaluate translation quality with corpus-level BLEU score.
-    Uses model.infer() + sacrebleu to match Gradescope evaluation exactly.
     Falls back to nltk corpus_bleu if sacrebleu is not installed.
     """
     from datasets import load_dataset
 
     model.eval()
 
-    # ── sacrebleu path (matches Gradescope) ────────────────────────────
+    # ── sacrebleu path ────────────────────────────
     if HAS_SACREBLEU:
         # infer which split to use from the dataloader's dataset size
         # val = 1014, test = 1000 — this lets the same function work for both
@@ -327,7 +314,7 @@ def evaluate_bleu(
 
 
 # ══════════════════════════════════════════════════════════════════════
-# ❺  CHECKPOINT UTILITIES  (autograder loads your model from disk)
+# ❺  CHECKPOINT UTILITIES 
 # ══════════════════════════════════════════════════════════════════════
 
 def save_checkpoint(
@@ -339,9 +326,6 @@ def save_checkpoint(
 ) -> None:
     """
     Save model + optimiser + scheduler state to disk.
-
-    The autograder will call load_checkpoint to restore your model.
-    Do NOT change the keys in the saved dict.
 
     Args:
         model     : Transformer instance.
